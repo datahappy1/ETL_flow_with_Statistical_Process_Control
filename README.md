@@ -1,5 +1,5 @@
 # ETL_flow_with_Statistical_Process_Control
-Materials and demo-installation scripts for my talk about getting your ETL flow under Statistical Process Control I held at the Bulgaria Web Summit 2018
+Materials and demo-installation scripts for my presentation "Get your ETL flow under Statistical Process Control" I held at the Bulgaria Web Summit 2018
 
 ### the presentation slide desk can be viewed here:
 https://datahappy1.github.io/ETL_flow_with_Statistical_Process_Control/html/bws018.html
