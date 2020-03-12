@@ -1,528 +1,58 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML>
-<HEAD>
-	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
-	<TITLE></TITLE>
-	<META NAME="GENERATOR" CONTENT="LibreOffice 4.1.6.2 (Linux)">
-	<META NAME="AUTHOR" CONTENT="Pavel Prudky">
-	<META NAME="CREATED" CONTENT="20180401;194500000000000">
-	<META NAME="CHANGEDBY" CONTENT="Pavel Prudky">
-	<META NAME="CHANGED" CONTENT="20180412;220600000000000">
-	<META NAME="AppVersion" CONTENT="15.0000">
-	<META NAME="DocSecurity" CONTENT="0">
-	<META NAME="HyperlinksChanged" CONTENT="false">
-	<META NAME="LinksUpToDate" CONTENT="false">
-	<META NAME="ScaleCrop" CONTENT="false">
-	<META NAME="ShareDoc" CONTENT="false">
-	<STYLE TYPE="text/css">
-	<!--
-		@page { size: 8.5in 11in; margin: 1in }
-		P { margin-bottom: 0.08in; direction: ltr; widows: 2; orphans: 2 }
-		A:link { color: #0563c1; so-language: zxx }
-	-->
-	</STYLE>
-</HEAD>
-<BODY LANG="en-US" LINK="#0563c1" DIR="LTR">
-<P STYLE="margin-top: 0.13in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#101010"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><B>Get
-your ETL flow under control using 3sigma control Limits</B></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><B>THEORY
-PART</B></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Hey
-everyone, thanks for joining this presentation, it’s great to see
-you here. Before we start, let me introduce myself and what I’ll be
-talking about today. My name is Pavel Prudky and I’ve been working
-with data, databases and reporting development for my whole
-professional life. In the beginning of my career, I was strictly a
-database and reporting developer and in the last 6 years, I’m
-focused mainly on Business Intelligence development and lately also
-on data and ETL engineering. I have worked for all kinds of
-companies, from corporate &amp; enterprise size to startups figuring
-out that startups work better for me. Now that would be enough about
-me, let’s talk about what’s ahead of us in this presentation. </FONT></FONT></FONT>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>As
-stated in the BWS homepage, I would like to talk about getting your
-ETL job flow under control using 3 sigma control Limits. And what
-does this mean? Imagine yourself in a situation where you are a part
-of a data processing team, let’s say you have flat files, csv or
-xml coming in as the sources and your job is to make sure the data
-goes flawlessly through the whole data pipeline to the target
-systems, most likely CRM applications,  risk modules, reporting
-systems et cetera. Now in every stage of my career, in every company
-I worked for, I always wanted to be on top of things knowing what is
-happening first without the data related incidents being raised by
-your boss, the business or some other folks from the client’s
-management. And when I say what is happening, I mean what and where
-and when is failing. </FONT></FONT></FONT>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Typically
-you load a file, your ETL logging mechanism inside of your ETL
-framework captures some meta information like filename, row count,
-when was the file created etc. and a proper logging mechanism will
-store at least the row count, the start timestamp, the end timestamp
-and the status in every stage of the processing. With this
-information persisted inside of a logging data-mart or maybe even
-just in one large logging table, you are able to start applying
-statistical rules on top and get things under your control. Today I
-would like to explain how to use the 'Three-Sigma Limits' for this
-purpose.</FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Three-sigma
-limit (3-sigma limits) is a statistical calculation that refers to
-data within three standard deviations from a mean. In business
-applications, three-sigma refers to processes that operate
-efficiently and produce items of the highest quality.</FONT></FONT></FONT>
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>The
-so-called three-sigma rule of thumb expresses a conventional
-heuristic that nearly all values are taken to lie within three
-standard deviations of the mean, and thus it is empirically useful to
-treat 99.7% probability as near certainty. Related to our ETL
-logging, I will use this rule to determine whether an attribute
-tracked in the ETL log ( Row count of an file extracted in a specific
-stage, Processing duration of a file inside a specific stage ) lies
-inside the 3 sigma control limit. In case it does lie in, that would
-mean, that the value is not an outlier, not something to consider a
-problem, all’s good. (for now)</FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>My
-aim in this presentation / demo is not to go too deep inside of
-statistical control processing theory. There is plenty of resources
-out there on this topic. My main focus is to show, that adding this
-layer to your ETL processing is not too complicated ,setting up the
-components is not too demanding and in general, in one hour, you can
-have this up and running and see for yourself, if this solution will
-be beneficial for you or not. </FONT></FONT></FONT>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>So
-let’s dive in a little deeper. As mentioned earlier, my development
-goal is to see how many rows above or below the 3 sigma control limit
-I have in the data processing ETL framework. I would also like to
-know if any file’s processing duration in a specific stage is above
-or below the control limits. For this demo, I prepared a sample
-Logger history table stored in SQLSERVER 2017. The table looks
-something like this. </FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><B>/
-Opening the SSMS studio /</B></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<IMG SRC="bws2018-talk_html_f244b587.png" NAME="Picture 1" ALIGN=LEFT HSPACE=12 WIDTH=315 HEIGHT=608 BORDER=0><BR><BR>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#0000ff"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">USE</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">
-LOGGER</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#0000ff"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">GO</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><BR>
-</P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#0000ff"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">SELECT</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">
-</SPAN></FONT></FONT></FONT><FONT COLOR="#0000ff"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">TOP
-</SPAN></FONT></FONT></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">(</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">10</SPAN></FONT></FONT></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">)</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">
-[Logger_History_ID]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Execution_UTC_Datetime]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Job_Name]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Job_Status]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Job_Last_Modified_By]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Source_File_Type]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Source_File_Name]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Customer_Name]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Data_Feed_Type]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Server_Name]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Stage_Name]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Stage_Row_Count]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Processing_Start_Datetime]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Processing_End_Datetime]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Processing_Duration]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Moved_To_ES]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
-     </SPAN></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">,</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[IsProcessed]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0in; line-height: 100%"><FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">
- </SPAN></FONT><FONT COLOR="#0000ff"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">FROM</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">
-[Logger]</SPAN></FONT></FONT></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">.</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[dbo]</SPAN></FONT></FONT></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">.</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">[Logger_History]</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><SPAN STYLE="background: #ffffff">  </SPAN></FONT><FONT COLOR="#0000ff"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">ORDER</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">
-</SPAN></FONT></FONT></FONT><FONT COLOR="#0000ff"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">BY</SPAN></FONT></FONT></FONT><FONT COLOR="#000000"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">
-Execution_UTC_Datetime </SPAN></FONT></FONT></FONT><FONT COLOR="#0000ff"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">DESC</SPAN></FONT></FONT></FONT><FONT COLOR="#808080"><FONT FACE="Consolas, serif"><FONT SIZE=2 STYLE="font-size: 9pt"><SPAN STYLE="background: #ffffff">;</SPAN></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>As
-you can see, these dummy attributes are being persisted with my ETL
-logging mechanisms inside the framework in the granularity of “File
-– Processing Server Name -  Stage Name“. Let’s have a brief
-look at the values. I believe you’ll agree with me, that this is
-nothing outstanding, just a standard normalized logging table. I
-would like to point out the Moved_To_ES and IsProcessed Boolean
-attributes. In case you’ll get interested in this project, you
-might find it also very useful to have a de-normalized check name –
-check value View on top of this table. </FONT></FONT></FONT>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>I
-will show you how I build a Stored Procedure operating on top of this
-logger_history table and how it’s used to determine the outliers.</FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><B>/script
-out the code of gen_3sigma_event SP/</B></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>First
-block of code is calculating the mean and the standard deviations
-based on the grouped by columns I chose.</FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><B>/going
-through the code/</B></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Second
-block of code is used to calculate the outliers and mark all the
-checked rows with a flag</FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>In
-order for those values to not be processed again with the next
-scheduled run of this SP.</FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><B>/going
-through the code/</B></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Third
-block of code is used to iterate through the outliers, dynamically
-generate the SQL statements that will be used to call system SP
-xp_logevent that will pass those values to the Windows Event Log for
-us. I am also marking the outliers with a flag so they do not get
-sent over to the event log next time. Also check and see how I
-iterate in a dataset, this is a cool way of substituting SQL Server
-cursors in case you’re not using it.</FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Now
-to the determined outlier values – I would like to pass them to
-some company-wide monitoring platform, in this demo case, I chose
-Elasticsearch with the results visible in a Kibana dashboard. The way
-how this is done, and yes I’m aware there are other options how to
-do this, is like this:</FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>SQL
-Server ETL logging database – SQL Agent job scheduling a Stored
-Procedure passing events to Windows Event Log - Winlogbeat –
-Elasticsearch (Kibana)</FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<IMG SRC="bws2018-talk_html_eacb8140.png" NAME="Picture 4" ALIGN=BOTTOM WIDTH=624 HEIGHT=296 BORDER=0></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>It
-gets a little bit hacky, but what I like is that you can build this
-on your own from the ground while being able to customize almost
-everything. </FONT></FONT></FONT>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>I
-assume you had enough of talking, that makes sense, but before we get
-our hands dirty, I need to introduce step by step the key components
-of this setup.</FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Prerequisites
-to get us started:</FONT></FONT></FONT></P>
-<OL>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>SQL
-	Server 2017 Developer edition</FONT></FONT></FONT></P>
-</OL>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<A HREF="https://www.microsoft.com/en-us/sql-server/sql-server-downloads"><FONT COLOR="#4472c4"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>https://www.microsoft.com/en-us/sql-server/sql-server-downloads</FONT></FONT></FONT></A></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>SQL
-Server doesn’t need much introduction I guess, but let’s talk
-about the version we’ll need for this demo.</FONT></FONT></FONT></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>SQL
-Server 2017 Developer is a full-featured free edition, licensed for
-use as a development and test database in a non-production
-environment. At first I thought I could demonstrate this with a more
-lightweight SQL Server Express database, but I realized that this
-version doesn’t have SQL Agent allowing us to schedule jobs. We
-will need to setup a scheduled routine that will keep hitting the ETL
-logging database looking for 3 sigma outliers and passing the to the
-Windows Event Log.</FONT></FONT></FONT></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>*Don’t
-forget to download Access Database Engine to be able to load Excel
-files to DBs used in this demo</FONT></FONT></FONT></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<A HREF="https://www.microsoft.com/en-us/download/confirmation.aspx?id=23734"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>https://www.microsoft.com/en-us/download/confirmation.aspx?id=23734</FONT></FONT></A></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<OL START=2>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Winlogbeat</FONT></FONT></FONT></P>
-</OL>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<A HREF="https://www.elastic.co/downloads/beats/winlogbeat"><FONT COLOR="#4472c4"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>https://www.elastic.co/downloads/beats/winlogbeat</FONT></FONT></FONT></A></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Winlogbeat
-is a module inside of the Elastic stack. Winlogbeat ships Windows
-event logs to Elasticsearch or Logstash. You can install it as a
-Windows service on Windows XP or later.</FONT></FONT></FONT></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Winlogbeat
-reads from one or more event logs using Windows APIs, filters the
-events based on user-configured criteria, then sends the event data
-to the configured outputs (Elasticsearch or Logstash). Winlogbeat
-watches the event logs so that new event data is sent in a timely
-manner. The read position for each event log is persisted to disk to
-allow Winlogbeat to resume after restarts.</FONT></FONT></FONT></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Winlogbeat
-can capture event data from any event logs running on your system.
-For example, you can capture events such as:</FONT></FONT></FONT></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<UL>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>application
-	events</FONT></FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>hardware
-	events</FONT></FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>security
-	events</FONT></FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>system
-	events</FONT></FONT></FONT></P>
-</UL>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>We
-will use Winlogbeat in a little bit hacky way, instead of capturing
-the “real” windows events like who tried to login etc. or who
-inserted that USB stick, we will raise the events containing our ETL
-framework 3 sigma outliers from a SQL Server stored procedure right
-into to the Windows Event Log. Winlogbeat is going to be responsible
-for passing those events to our Elasticsearch index.</FONT></FONT></FONT></P>
-<OL START=3>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>ElasticSearch</FONT></FONT></FONT></P>
-</OL>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<A HREF="https://www.elastic.co/products/elasticsearch"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>https://www.elastic.co/products/elasticsearch</FONT></FONT></A></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Let
-me use the definition from elastic.co, Elasticsearch is a
-distributed, RESTful search and analytics engine capable of solving a
-growing number of use cases. As the heart of the Elastic Stack, it
-centrally stores your data so you can discover the expected and
-uncover the unexpected.</FONT></FONT></FONT></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Simply
-said, we will use ElasticSearch to ingest our logging events datarows
-passed from Winlogbeat and later use it in Kibana dashboard. I cannot
-go too deep inside of the ElasticSearch, that would totally scale-out
-of this presentation but we might need to do some indexing work here
-as well.</FONT></FONT></FONT></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Throughout
-this presentation, I would like to show how to pass the events all
-the way up to the visualization tool called Kibana, but you might
-want to investigate a little bit more here and use the Elastic
-Watcher module ( part of the X-pack module ) passing your events
-right into your event notification mechanisms like Pager Duty , Slack
-etc.</FONT></FONT></FONT></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<OL START=4>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Kibana</FONT></FONT></FONT></P>
-</OL>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<A HREF="https://www.elastic.co/products/kibana"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>https://www.elastic.co/products/kibana</FONT></FONT></A></P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Kibana
-is a made up word. Kibana will be used as our ElasticSearch
-visualization tool for the events we will be looking for. This tool
-has many features out of which we’ll utilize only the Time  series
-chart to get us started, but I expect , that in case this solution
-got your interest, you’ll want to do more with this tool.  </FONT></FONT></FONT>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><B>DEMO
-PART</B></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Now
-let’s get to the demo part. I have already installed all the
-pre-requisites to save some time so let’s have a look what we have
-in place and let’s review the coding needed. </FONT></FONT></FONT>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><I>I
-will login to SSMS local instance, load legacy dummy ETL logging data
-that I know will generate SCP outliers, show again around the data
-model and script out the Stored Procedure for capturing the outliers
-to make sure everyone understands. I will alter this SP to print out
-the dynamically generated statements so we can see what gets passed
-to the Windows Event Log. I will review the code to see how is a mean
-and standard deviations calculated on top of the data. I will go
-through the xp_logevent function and what I build around it to make
-sure everyone understands how to pass the event to the Windows Event
-Log and how to make sure we don’t have the data distorted by other
-Windows events. I will create a SQL Agent job running each 5 minutes
-that will execute this Stored Procedure. We will review the Windows
-Event log events raised inside of the Windows Event Viewer.</I></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><I>Next
-step will be going through the configuration YAML file of the
-Winlogbeat , making sure we capture only the events we are interested
-in and making sure we pass the data to Elasticsearch installed on our
-local machine.  We will start Winlogbeat as a Windows service in
-PowerShell, I will start the ElasticSearch service and proceed
-further to Kibana, where we should be able to see the events being
-generated. We might need to setup the indexing in a proper way and
-then we will continue to the last part, and that would be creating
-the timeline dashboard.</I></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><B>WRAPUP</B></FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>As
-you can see from the dashboard, we are able to see our events based
-on outliers in Kibana. Now I consider this maybe more of a beginning,
-because this is where you can start building your own solution from. </FONT></FONT></FONT>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>And
-I believe it’s generally important to critically look at this
-solution and see the pros and cons.</FONT></FONT></FONT></P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><B>PROS:</B></FONT></FONT></FONT></P>
-<UL>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>With
-	just a few hours of work, you can get a lot of control in your data
-	processing framework, you can definitely be informed in advance when
-	something fails and react in advance as well. There isn’t a very
-	steep learning curve in this case, things seem to work well with
-	plenty of documentation available online.</FONT></FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>In
-	case your company has ElasticSearch cluster in place, you will be
-	able to snap-in with a rather small effort needed</FONT></FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>You
-	can build on top of this. This is really just a first step that you
-	can align to your needs. You can enhance this with other events, for
-	example sending jobs with failed statuses, extend this to start
-	raising events regarding jobs that are long-running even before they
-	finish</FONT></FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>You
-	can easily utilize the rest of the Elastic Stack components to
-	extend this solution</FONT></FONT></FONT></P>
-</UL>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><B>CONS:</B></FONT></FONT></FONT></P>
-<UL>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>This
-	solution works well in an environment, where you already have a lot
-	of ETL logging information collected from the past, where one
-	slightly different size file or some network glitch causing longer
-	stage processing doesn’t skew your mean and also the 3 sigma
-	control limits.</FONT></FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>You
-	need to have a little more in-depth knowledge of Elasticsearch in
-	case your team will be managing this pipeline</FONT></FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>For
-	more in depth analytics, Kibana has a slight learning curve as well</FONT></FONT></FONT></P>
-</UL>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><B>OTHER
-POSSIBLE SOLUTIONS: </B></FONT></FONT></FONT>
-</P>
-<UL>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Use
-	Python script to query out of the logger_history table SCP outliers
-	and pass them directly to ElasticSearch webservice</FONT></FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Sumologic
-	and other frameworks</FONT></FONT></FONT></P>
-</UL>
-<P STYLE="margin-left: 0.5in; margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3><B>MY
-TIPS: </B></FONT></FONT></FONT>
-</P>
-<UL>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%"><A NAME="_GoBack"></A>
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Make
-	sure you send from Winlogbeat to Elasticsearch only the events you
-	are generating. That would be done inside of the winlogbeat.yaml
-	config file for example, but you can also filter in ElasticSearch</FONT></FONT></FONT></P>
-	<LI><P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-	<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Make
-	sure you have enough of data collected to get meaningful results out
-	of this project. Now this project data quality will rise over time
-	so don’t be worried if in the beginning you get false positive
-	outlier events. </FONT></FONT></FONT>
-	</P>
-</UL>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<BR><BR>
-</P>
-<P STYLE="margin-bottom: 0.13in; background: #ffffff; line-height: 100%">
-<FONT COLOR="#000000"><FONT FACE="Calibri Light, serif"><FONT SIZE=3>Thanks
-for your attention, now is the time for Q&amp;A.</FONT></FONT></FONT></P>
-</BODY>
-</HTML>
+<h1>Get your ETL flow under control using 3sigma control Limits</h1>
+<h2>THEORY PART</h2>
+<p>Hey everyone, thanks for joining this presentation, it&rsquo;s great to see you here. Before we start, let me introduce myself and what I&rsquo;ll be talking about today. My name is Pavel Prudky and I&rsquo;ve been working with data, databases and reporting development for my whole professional life. In the beginning of my career, I was strictly a database and reporting developer and in the last 6 years, I&rsquo;m focused mainly on Business Intelligence development and lately also on data and ETL engineering. I have worked for all kinds of companies, from corporate &amp; enterprise size to startups figuring out that startups work better for me. Now that would be enough about me, let&rsquo;s talk about what&rsquo;s ahead of us in this presentation.</p>
+<p>As stated in the BWS homepage, I would like to talk about getting your ETL job flow under control using 3 sigma control Limits. And what does this mean? Imagine yourself in a situation where you are a part of a data processing team, let&rsquo;s say you have flat files, csv or xml coming in as the sources and your job is to make sure the data goes flawlessly through the whole data pipeline to the target systems, most likely CRM applications, risk modules, reporting systems et cetera. Now in every stage of my career, in every company I worked for, I always wanted to be on top of things knowing what is happening first without the data related incidents being raised by your boss, the business or some other folks from the client&rsquo;s management. And when I say what is happening, I mean what and where and when is failing.</p>
+<p><br />Typically you load a file, your ETL logging mechanism inside of your ETL framework captures some meta information like filename, row count, when was the file created etc. and a proper logging mechanism will store at least the row count, the start timestamp, the end timestamp and the status in every stage of the processing. With this information persisted inside of a logging data-mart or maybe even just in one large logging table, you are able to start applying statistical rules on top and get things under your control. Today I would like to explain how to use the 'Three-Sigma Limits' for this purpose.</p>
+<p><br />Three-sigma limit (3-sigma limits) is a statistical calculation that refers to data within three standard deviations from a mean. In business applications, three-sigma refers to processes that operate efficiently and produce items of the highest quality. The so-called three-sigma rule of thumb expresses a conventional heuristic that nearly all values are taken to lie within three standard deviations of the mean, and thus it is empirically useful to treat 99.7% probability as near certainty. Related to our ETL logging, I will use this rule to determine whether an attribute tracked in the ETL log ( Row count of an file extracted in a specific stage, Processing duration of a file inside a specific stage ) lies inside the 3 sigma control limit. In case it does lie in, that would mean, that the value is not an outlier, not something to consider a problem, all&rsquo;s good. (for now)</p>
+<p><br />My aim in this presentation / demo is not to go too deep inside of statistical control processing theory. There is plenty of resources out there on this topic. My main focus is to show, that adding this layer to your ETL processing is not too complicated ,setting up the components is not too demanding and in general, in one hour, you can have this up and running and see for yourself, if this solution will be beneficial for you or not.</p>
+<p><br />So let&rsquo;s dive in a little deeper. As mentioned earlier, my development goal is to see how many rows above or below the 3 sigma control limit I have in the data processing ETL framework. I would also like to know if any file&rsquo;s processing duration in a specific stage is above or below the control limits. For this demo, I prepared a sample Logger history table stored in SQLSERVER 2017. The table looks something like this:</p>
+<p><img src="https://github.com/datahappy1/ETL_flow_with_Statistical_Process_Control/blob/master/docs/deepdive/bws2018-talk_html_f244b587.png?raw=true" alt="logger_history schem" /></p>
+<p><br /><strong>/ Opening the SSMS studio /</strong></p>
+<p>As you can see, these dummy attributes are being persisted with my ETL logging mechanisms inside the framework in the granularity of &ldquo;File &ndash; Processing Server Name - Stage Name&ldquo;. Let&rsquo;s have a brief look at the values. I believe you&rsquo;ll agree with me, that this is nothing outstanding, just a standard normalized logging table. I would like to point out the Moved_To_ES and IsProcessed Boolean attributes. In case you&rsquo;ll get interested in this project, you might find it also very useful to have a de-normalized check name &ndash; check value View on top of this table.<br />I will show you how I build a Stored Procedure operating on top of this logger_history table and how it&rsquo;s used to determine the outliers.</p>
+<p><br /><strong>/script out the code of gen_3sigma_event SP/</strong>&nbsp;</p>
+<p>First block of code is calculating the mean and the standard deviations based on the grouped by columns I chose.</p>
+<p><br /><strong>/going through the code/</strong>&nbsp;</p>
+<p>Second block of code is used to calculate the outliers and mark all the checked rows with a flag<br />In order for those values to not be processed again with the next scheduled run of this SP.</p>
+<p><br /><strong>/going through the code/</strong>&nbsp;</p>
+<p>Third block of code is used to iterate through the outliers, dynamically generate the SQL statements that will be used to call system SP xp_logevent that will pass those values to the Windows Event Log for us. I am also marking the outliers with a flag so they do not get sent over to the event log next time. Also check and see how I iterate in a dataset, this is a cool way of substituting SQL Server cursors in case you&rsquo;re not using it.</p>
+<p><br />Now to the determined outlier values &ndash; I would like to pass them to some company-wide monitoring platform, in this demo case, I chose Elasticsearch with the results visible in a Kibana dashboard. The way how this is done, and yes I&rsquo;m aware there are other options how to do this, is like this:<br /><strong>SQL Server ETL logging database &ndash; SQL Agent job scheduling a Stored Procedure passing events to Windows Event Log - Winlogbeat &ndash; Elasticsearch (Kibana)</strong></p>
+<p><img src="https://github.com/datahappy1/ETL_flow_with_Statistical_Process_Control/blob/master/docs/deepdive/bws2018-talk_html_eacb8140.png?raw=true" alt="" /></p>
+<p>&nbsp;</p>
+<p><img src="https://github.com/datahappy1/ETL_flow_with_Statistical_Process_Control/blob/master/docs/deepdive/bws2018-talk_html_f244b587.png&quot;" alt="flow diagram" align="right" /></p>
+<p>It gets a little bit hacky, but what I like is that you can build this on your own from the ground while being able to customize almost everything. I assume you had enough of talking, that makes sense, but before we get our hands dirty, I need to introduce step by step the key components of this setup.</p>
+<p><strong>Prerequisites to get us started: </strong></p>
+<ul>
+<li><strong>SQL Server 2017 Developer edition</strong> <a href="https://www.microsoft.com/en-us/sql-server/sql-server-downloads" target="_blank" rel="noopener">https://www.microsoft.com/en-us/sql-server/sql-server-downloads</a> SQL Server doesn&rsquo;t need much introduction I guess, but let&rsquo;s talk about the version we&rsquo;ll need for this demo. SQL Server 2017 Developer is a full-featured free edition, licensed for use as a development and test database in a non-production environment. At first I thought I could demonstrate this with a more lightweight SQL Server Express database, but I realized that this version doesn&rsquo;t have SQL Agent allowing us to schedule jobs. We will need to setup a scheduled routine that will keep hitting the ETL logging database looking for 3 sigma outliers and passing the to the Windows Event Log. *Don&rsquo;t forget to download Access Database Engine to be able to load Excel files to DBs used in this demo <a href="https://www.microsoft.com/en-us/download/confirmation.aspx?id=23734">https://www.microsoft.com/en-us/download/confirmation.aspx?id=23734 </a></li>
+<li><strong>Winlogbeat</strong> <a href="https://www.elastic.co/downloads/beats/winlogbeat" target="_blank" rel="noopener">https://www.elastic.co/downloads/beats/winlogbeat</a> Winlogbeat is a module inside of the Elastic stack. Winlogbeat ships Windows event logs to Elasticsearch or Logstash. You can install it as a Windows service on Windows XP or later. Winlogbeat reads from one or more event logs using Windows APIs, filters the events based on user-configured criteria, then sends the event data to the configured outputs (Elasticsearch or Logstash). Winlogbeat watches the event logs so that new event data is sent in a timely manner. The read position for each event log is persisted to disk to allow Winlogbeat to resume after restarts. Winlogbeat can capture event data from any event logs running on your system. For example, you can capture events such as: application events hardware events security events system events We will use Winlogbeat in a little bit hacky way, instead of capturing the &ldquo;real&rdquo; windows events like who tried to login etc. or who inserted that USB stick, we will raise the events containing our ETL framework 3 sigma outliers from a SQL Server stored procedure right into to the Windows Event Log. Winlogbeat is going to be responsible for passing those events to our Elasticsearch index.</li>
+<li><strong>ElasticSearch</strong> <a href="https://www.elastic.co/products/elasticsearch" target="_blank" rel="noopener">https://www.elastic.co/products/elasticsearch</a> Let me use the definition from elastic.co, Elasticsearch is a distributed, RESTful search and analytics engine capable of solving a growing number of use cases. As the heart of the Elastic Stack, it centrally stores your data so you can discover the expected and uncover the unexpected. Simply said, we will use ElasticSearch to ingest our logging events datarows passed from Winlogbeat and later use it in Kibana dashboard. I cannot go too deep inside of the ElasticSearch, that would totally scale-out of this presentation but we might need to do some indexing work here as well. Throughout this presentation, I would like to show how to pass the events all the way up to the visualization tool called Kibana, but you might want to investigate a little bit more here and use the Elastic Watcher module ( part of the X-pack module ) passing your events right into your event notification mechanisms like Pager Duty , Slack etc.</li>
+<li><strong>Kibana</strong> <a href="https://www.elastic.co/products/kibana" target="_blank" rel="noopener">https://www.elastic.co/products/kibana</a> Kibana is a made up word. Kibana will be used as our ElasticSearch visualization tool for the events we will be looking for. This tool has many features out of which we&rsquo;ll utilize only the Time series chart to get us started, but I expect , that in case this solution got your interest, you&rsquo;ll want to do more with this tool.</li>
+</ul>
+<h2>DEMO PART</h2>
+<p>Now let&rsquo;s get to the demo part. I have already installed all the pre-requisites to save some time so let&rsquo;s have a look what we have in place and let&rsquo;s review the coding needed. I will login to SSMS local instance, load legacy dummy ETL logging data that I know will generate SCP outliers, show again around the data model and script out the Stored Procedure for capturing the outliers to make sure everyone understands. I will alter this SP to print out the dynamically generated statements so we can see what gets passed to the Windows Event Log. I will review the code to see how is a mean and standard deviations calculated on top of the data. I will go through the xp_logevent function and what I build around it to make sure everyone understands how to pass the event to the Windows Event Log and how to make sure we don&rsquo;t have the data distorted by other Windows events. I will create a SQL Agent job running each 5 minutes that will execute this Stored Procedure. We will review the Windows Event log events raised inside of the Windows Event Viewer.</p>
+<p>Next step will be going through the configuration YAML file of the Winlogbeat , making sure we capture only the events we are interested in and making sure we pass the data to Elasticsearch installed on our local machine. We will start Winlogbeat as a Windows service in PowerShell, I will start the ElasticSearch service and proceed further to Kibana, where we should be able to see the events being generated. We might need to setup the indexing in a proper way and then we will continue to the last part, and that would be creating the timeline dashboard.</p>
+<h2>WRAPPING UP</h2>
+<p>As you can see from the dashboard, we are able to see our events based on outliers in Kibana. Now I consider this maybe more of a beginning, because this is where you can start building your own solution from. And I believe it&rsquo;s generally important to critically look at this solution and see the pros and cons.</p>
+<p><strong>PROS:</strong></p>
+<ul>
+<li>With just a few hours of work, you can get a lot of control in your data processing framework, you can definitely be informed in advance when something fails and react in advance as well. There isn&rsquo;t a very steep learning curve in this case, things seem to work well with plenty of documentation available online.</li>
+<li>In case your company has ElasticSearch cluster in place, you will be able to snap-in with a rather small effort needed</li>
+<li>You can build on top of this. This is really just a first step that you can align to your needs. You can enhance this with other events, for example sending jobs with failed statuses, extend this to start raising events regarding jobs that are long-running even before they finish</li>
+<li>You can easily utilize the rest of the Elastic Stack components to extend this solution</li>
+</ul>
+<p><strong>CONS:</strong></p>
+<ul>
+<li>This solution works well in an environment, where you already have a lot of ETL logging information collected from the past, where one slightly different size file or some network glitch causing longer stage processing doesn&rsquo;t skew your mean and also the 3 sigma control limits.</li>
+<li>You need to have a little more in-depth knowledge of Elasticsearch in case your team will be managing this pipeline</li>
+<li>For more in depth analytics, Kibana has a slight learning curve as well</li>
+</ul>
+<p><strong>OTHER POSSIBLE SOLUTIONS:</strong></p>
+<ul>
+<li>Use Python script to query out of the logger_history table SCP outliers and pass them directly to ElasticSearch webservice</li>
+<li>Sumologic and other frameworks</li>
+</ul>
+<p><strong>MY TIPS: </strong></p>
+<ul>
+<li>Make sure you send from Winlogbeat to Elasticsearch only the events you are generating. That would be done inside of the winlogbeat.yaml config file for example, but you can also filter in ElasticSearch</li>
+<li>Make sure you have enough of data collected to get meaningful results out of this project. Now this project data quality will rise over time so don&rsquo;t be worried if in the beginning you get false positive outlier events.</li>
+</ul>
+<p>Thanks for your attention, now is the time for Q&amp;A.</p>
